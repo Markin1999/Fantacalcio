@@ -1,4 +1,4 @@
-import express, { json } from "express";
+/*import express, { json } from "express";
 import cors from "cors";
 import { getPlayers } from "./controllers/csvController.js";
 
@@ -12,3 +12,4 @@ app.use("/api/players", getPlayers);
 app.listen(5000, "127.0.0.1", () => {
   console.log("Server avviato su http://127.0.0.1:5000");
 });
+*/
