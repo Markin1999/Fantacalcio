@@ -9,23 +9,34 @@ import { readCsv } from "../utils/csvReader.js";
 import { writeFile } from "fs/promises";
 //Serve per trasformare l'oggetto in un CSV
 import Papa from "papaparse";
+import { get } from "http";
 const { unparse } = Papa;
 
 // Per compatibilità con ESM (equivalente di __dirname)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-export async function getPlayers() {
+//Funzione che legge il file CSV e restituisce un array di oggetti
+
+export async function getPlayers(_, res) {
   try {
     //Trova il percorso assoluto del file
     const file = path.resolve(__dirname, "../data/database.csv");
     const rows = await readCsv(file);
-    //Fine per leggere il csv trasformato in array di oggetti
 
-    //Qui inizio a unire i valori di ogni giocatore
+    const rowsNoEmpty = rows.filter(
+      (row) => row.Name !== "Player" && row.Name !== "player"
+    );
 
-    //Lo utilizzo per unire i valori
+    res.status(200).json(rowsNoEmpty);
+  } catch (err) {
+    res.status(500).json({ error: "Errore nel leggere il file CSV" });
+  }
+}
 
+//Funzione che unisce valori all'interno di un oggetto CSV
+export async function unioneCsvValue(rows) {
+  try {
     const playerStats = {};
 
     for (const row of rows) {
@@ -95,5 +106,3 @@ export async function getPlayers() {
     console.error("❌ Errore lettura CSV:", err.message, "\nDettagli:", err);
   }
 }
-
-getPlayers();
