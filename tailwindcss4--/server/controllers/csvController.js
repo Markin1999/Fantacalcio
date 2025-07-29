@@ -12,9 +12,12 @@ import Papa from "papaparse";
 import { get } from "http";
 const { unparse } = Papa;
 import { createObjectCsvWriter } from "csv-writer";
+import { stringify } from "csv-stringify/sync";
+
 import fs from "fs";
 import { parse } from "csv-parse";
-import { stringify } from "csv-stringify";
+
+import { csvModify } from "../utils/csvModify.js";
 
 // Per compatibilità con ESM (equivalente di __dirname)
 const __filename = fileURLToPath(import.meta.url);
@@ -39,90 +42,6 @@ export async function getPlayers(_, res) {
 }
 
 //funzione che aggiunge un file al csv
-
-export async function addPlayerToCsv(req, res) {
-  const filePath = path.resolve(__dirname, "../data/database.csv");
-
-  // Dati da inserire
-
-  const nuovoGiocatore = req.body;
-
-  // Crea un writer per il CSV e lo appende alla fine del file esistente
-  const csvWriter = createObjectCsvWriter({
-    path: filePath,
-    header: [
-      { id: "player", title: "player" },
-      { id: "squad", title: "squad" },
-      { id: "pos", title: "pos" },
-      { id: "partite", title: "partite" },
-      { id: "minuti", title: "minuti" },
-      { id: "goal", title: "goal" },
-      { id: "assist", title: "assist" },
-      { id: "rigori", title: "rigori" },
-      { id: "gialli", title: "gialli" },
-      { id: "rossi", title: "rossi" },
-    ],
-    append: true, // 👈 Aggiunge alla fine del CSV, non sovrascrive
-  });
-
-  try {
-    await csvWriter.writeRecords([nuovoGiocatore]);
-    res.status(201).json({ message: "Giocatore aggiunto con successo" });
-    console.log("Nuovo giocatore aggiunto al CSV.");
-  } catch (err) {
-    res.status(500).json({ error: "Errore durante l'aggiunta del giocatore" });
-    console.error("Errore durante la scrittura nel CSV:", err);
-  }
-}
-
-// Eliminazione da CSV confrontando player e squad
-export async function deletePlayerFromCsv(req, res) {
-  const filePath = path.resolve(__dirname, "../data/database.csv");
-  const { player, squad } = req.body;
-
-  if (!player || !squad) {
-    return res.status(400).json({ error: "player e squad sono obbligatori" });
-  }
-
-  const rows = [];
-
-  // 1. Legge tutte le righe del CSV
-  fs.createReadStream(filePath)
-    .pipe(parse({ columns: true }))
-    .on("data", (row) => {
-      // Mantiene solo i giocatori diversi da quello da eliminare
-      if (row.player !== player && row.squad !== squad) {
-        rows.push(row);
-      }
-    })
-    .on("end", () => {
-      // 2. Scrive il nuovo array filtrato nel CSV
-      stringify(rows, { header: true }, (err, output) => {
-        if (err) {
-          console.error("Errore nello stringify:", err);
-          return res
-            .status(500)
-            .json({ error: "Errore durante la scrittura del CSV" });
-        }
-
-        fs.writeFile(filePath, output, (err) => {
-          if (err) {
-            console.error("Errore nella scrittura del file:", err);
-            return res
-              .status(500)
-              .json({ error: "Errore nella riscrittura del CSV" });
-          }
-
-          res.status(200).json({ message: "Giocatore eliminato con successo" });
-          console.log(`Giocatore ${player} (${squad}) eliminato dal CSV.`);
-        });
-      });
-    })
-    .on("error", (err) => {
-      console.error("Errore nella lettura del CSV:", err);
-      res.status(500).json({ error: "Errore nella lettura del CSV" });
-    });
-}
 
 //Funzione che unisce valori all'interno di un oggetto CSV
 export async function unioneCsvValue(rows) {
@@ -194,5 +113,127 @@ export async function unioneCsvValue(rows) {
     }
   } catch (err) {
     console.error("❌ Errore lettura CSV:", err.message, "\nDettagli:", err);
+  }
+}
+
+// deletePlayer.js (ES modules)
+
+export async function deletePlayerFromCsv(req, res) {
+  const playerId = req.params.id;
+  try {
+    const filepath = path.resolve(__dirname, "../data/database.csv");
+
+    // 1. Leggi il CSV
+    const rows = await readCsv(filepath);
+
+    // 2. Scarta eventuali header duplicati e il giocatore da eliminare
+    const filtered = rows
+      .filter((row) => row.id !== "id") // header ripetuto?
+      .filter((row) => String(row.id) !== String(playerId));
+
+    // 2. Rimuove l'ID esistenti e aggiunge uno numerico incrementale
+    let counter = 1;
+    const filteredRows = filtered.map(({ id, ...rest }) => ({
+      id: counter++, // nuovo id semplice
+      ...rest,
+    }));
+
+    // 3. Ricrea il CSV
+    const nuovoCsv = unparse(filteredRows, {
+      columns: [
+        "id",
+        "player",
+        "squad",
+        "pos",
+        "partite",
+        "minuti",
+        "goal",
+        "assist",
+        "rigori",
+        "gialli",
+        "rossi",
+      ],
+    });
+
+    // 4. Scrittura atomica
+    fs.writeFileSync(filepath, nuovoCsv, "utf8");
+
+    res
+      .status(200)
+      .json({ message: `Giocatore ${playerId} eliminato con successo` });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: "Errore durante l'eliminazione del giocatore" });
+    console.error(
+      "Errore durante l'eliminazione del giocatore:",
+      error.message
+    );
+  }
+
+  console.log(`Giocatore ${playerId} eliminato con successo.`);
+}
+
+// ─────
+export async function addPlayerToCsv(req, res) {
+  const filePath = path.resolve(__dirname, "../data/database.csv");
+
+  const nuovoGiocatore = { ...req.body };
+
+  try {
+    const rows = await readCsv(filePath);
+
+    const columns = [
+      "id",
+      "player",
+      "squad",
+      "pos",
+      "partite",
+      "minuti",
+      "goal",
+      "assist",
+      "rigori",
+      "gialli",
+      "rossi",
+    ];
+
+    // 1. Calcola l'ID più alto esistente
+    const lastId = rows
+      .filter((r) => /^\d+$/.test(r.id))
+      .reduce((max, r) => Math.max(max, Number(r.id)), 0);
+
+    // 2. Assegna un nuovo ID
+    nuovoGiocatore.id = String(lastId + 1);
+
+    // 3. Normalizza tutti i dati per garantire coerenza con le colonne
+    const normalizedRows = [...rows, nuovoGiocatore].map((r) => {
+      const result = {};
+      columns.forEach((col) => {
+        result[col] = r[col] ?? "";
+      });
+      return result;
+    });
+
+    // 4. Genera CSV come stringa
+    const outCsv = stringify(normalizedRows, {
+      header: true,
+      columns,
+    });
+
+    // 5. Scrive il file CSV aggiornato
+    fs.writeFileSync(filePath, outCsv, "utf8");
+
+    // 6. Risposta al client
+    res.status(201).json({
+      message: "Giocatore aggiunto con successo",
+      id: nuovoGiocatore.id,
+    });
+
+    console.log(
+      `✅ Nuovo giocatore ${nuovoGiocatore.player} (ID ${nuovoGiocatore.id}) inserito nel CSV.`
+    );
+  } catch (err) {
+    console.error("Errore durante la scrittura nel CSV:", err);
+    res.status(500).json({ error: "Errore durante l'aggiunta del giocatore" });
   }
 }

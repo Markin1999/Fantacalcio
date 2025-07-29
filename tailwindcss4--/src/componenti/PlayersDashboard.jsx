@@ -31,22 +31,21 @@ const PlayerDashboard = () => {
   const [squadFilter, setSquadFilter] = useState("Tutte");
 
   const navigate = useNavigate();
-
+  const fetchPlayers = async () => {
+    try {
+      const res = await fetch("http://127.0.0.1:5000/api/players");
+      if (!res.ok) throw new Error("Risposta non valida");
+      const data = await res.json();
+      setPlayers(data);
+      console.log(data);
+    } catch (err) {
+      setError("Errore nel recupero dati: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   /** Fetch iniziale */
   useEffect(() => {
-    const fetchPlayers = async () => {
-      try {
-        const res = await fetch("http://127.0.0.1:5000/api/players");
-        if (!res.ok) throw new Error("Risposta non valida");
-        const data = await res.json();
-        setPlayers(data);
-        console.log(data);
-      } catch (err) {
-        setError("Errore nel recupero dati: " + err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchPlayers();
   }, []);
 
@@ -86,16 +85,17 @@ const PlayerDashboard = () => {
       <div className="text-red-600 flex justify-center mt-10">{error}</div>
     );
 
-  const handleDelete = async () => {
+  const handleDelete = async (id) => {
     try {
-      const res = await fetch("http://127.0.0.1:5000/addUser", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ player: form.player, squad: form.squad }),
+      const res = await fetch(`http://127.0.0.1:5000/deleteUser/${id}`, {
+        method: "DELETE",
       });
 
       if (!res.ok) throw new Error("Errore durante l'eliminazione");
       alert("Giocatore eliminato con successo!");
+      setTimeout(() => {
+        fetchPlayers(); // Ricarica i giocatori dopo 3 secondi
+      }, 3000);
     } catch (err) {
       alert("Errore: " + err.message);
     }
@@ -172,7 +172,7 @@ const PlayerDashboard = () => {
       <div className="w-[80%] mx-auto px-4 py-6 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((p) => (
           <div
-            key={p.index}
+            key={p.id}
             className="relative bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all"
           >
             {/* Header gradiente */}
@@ -188,7 +188,7 @@ const PlayerDashboard = () => {
             {/* Contenuto */}
             <div className="p-4">
               <button
-                onClick={() => handleDelete(p.index)}
+                onClick={() => handleDelete(p.id)}
                 className="absolute bottom-3 right-3 text-red-500 hover:text-red-700 transition"
                 title="Elimina giocatore"
               >
