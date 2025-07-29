@@ -37,22 +37,13 @@ export async function getPlayers(_, res) {
 
 //funzione che aggiunge un file al csv
 
-export async function addPlayerToCsv() {
+export async function addPlayerToCsv(req, res) {
   const filePath = path.resolve(__dirname, "../data/database.csv");
 
-  // Dati inventati da inserire
-  const nuovoGiocatore = {
-    player: "Mario Rossi",
-    squad: "Team Fantasia",
-    pos: "ATT",
-    partite: "25",
-    minuti: "1800",
-    goal: "12",
-    assist: "7",
-    rigori: "3",
-    gialli: "2",
-    rossi: "0",
-  };
+  // Dati da inserire
+
+  const nuovoGiocatore = req.body;
+
   // Crea un writer per il CSV e lo appende alla fine del file esistente
   const csvWriter = createObjectCsvWriter({
     path: filePath,
@@ -73,8 +64,10 @@ export async function addPlayerToCsv() {
 
   try {
     await csvWriter.writeRecords([nuovoGiocatore]);
+    res.status(201).json({ message: "Giocatore aggiunto con successo" });
     console.log("Nuovo giocatore aggiunto al CSV.");
   } catch (err) {
+    res.status(500).json({ error: "Errore durante l'aggiunta del giocatore" });
     console.error("Errore durante la scrittura nel CSV:", err);
   }
 }

@@ -38,7 +38,7 @@ function creaGiocatore() {
 
   const handleSubmit = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:5000/api/players", {
+      const res = await fetch("http://127.0.0.1:5000/addUser", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -70,6 +70,7 @@ function creaGiocatore() {
               className="w-full p-2 border border-gray-300 rounded-md"
               value={form.player}
               onChange={handleChange}
+              required
             />
           </div>
 
@@ -83,6 +84,7 @@ function creaGiocatore() {
               className="w-full p-2 border border-gray-300 rounded-md"
               value={form.squad}
               onChange={handleChange}
+              required
             >
               {squadreDisponibili.map((squad) => (
                 <option key={squad} value={squad}>
