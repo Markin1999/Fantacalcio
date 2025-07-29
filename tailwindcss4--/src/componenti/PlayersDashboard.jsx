@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
+  Trash,
   Search,
   RefreshCcw,
   Clock,
@@ -10,6 +11,7 @@ import {
   AlertCircle,
   Users,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 function normalizeText(text) {
   return text
@@ -28,6 +30,8 @@ const PlayerDashboard = () => {
   const [posFilter, setPosFilter] = useState("Tutti");
   const [squadFilter, setSquadFilter] = useState("Tutte");
 
+  const navigate = useNavigate();
+
   /** Fetch iniziale */
   useEffect(() => {
     const fetchPlayers = async () => {
@@ -45,6 +49,10 @@ const PlayerDashboard = () => {
     };
     fetchPlayers();
   }, []);
+
+  function handleAggiungiGiocatore() {
+    navigate("/creaGiocatore");
+  }
 
   /** Collezioni uniche per i menu a tendina */
   const squads = useMemo(
@@ -78,11 +86,15 @@ const PlayerDashboard = () => {
       <div className="text-red-600 flex justify-center mt-10">{error}</div>
     );
 
+  const handleDelete = async () => {
+    console.log("Eliminazione giocatore con ID:");
+  };
+
   /** Render principale */
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="h-screen w-screen bg-gray-100">
       {/* Navbar */}
-      <nav className="bg-white shadow sticky top-0 z-50">
+      <nav className="bg-white w-full shadow sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row gap-3 md:gap-6 items-center">
           {/* Search */}
           <div className="flex items-center gap-2 w-full md:w-auto">
@@ -130,6 +142,15 @@ const PlayerDashboard = () => {
             <RefreshCcw className="w-4 h-4" /> Reset
           </button>
 
+          {/* 👉 Nuovo pulsante: Aggiungi Giocatore */}
+          <button
+            className="flex items-center gap-1 p-2 border rounded bg-blue-600 text-black hover:bg-blue-700 transition"
+            onClick={handleAggiungiGiocatore} // <- Funzione da definire tu
+          >
+            ➕ Aggiungi Giocatore
+          </button>
+
+          {/* Contatore */}
           <span className="ml-auto text-sm text-gray-500">
             {filtered.length} / {players.length} giocatori
           </span>
@@ -137,7 +158,7 @@ const PlayerDashboard = () => {
       </nav>
 
       {/* Cards */}
-      <div className="max-w-7xl mx-auto px-4 py-6 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="w-[80%] mx-auto px-4 py-6 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((p) => (
           <div
             key={p.index}
@@ -155,6 +176,13 @@ const PlayerDashboard = () => {
 
             {/* Contenuto */}
             <div className="p-4">
+              <button
+                onClick={() => handleDelete(p.index)}
+                className="absolute bottom-3 right-3 text-red-500 hover:text-red-700 transition"
+                title="Elimina giocatore"
+              >
+                <Trash className="w-5 h-5" />
+              </button>
               {/* Posizione & Partite */}
               <div className="flex justify-between mb-3 text-xs font-medium">
                 <span className="bg-gray-200 px-2 py-1 rounded-full">

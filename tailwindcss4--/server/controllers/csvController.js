@@ -11,6 +11,7 @@ import { writeFile } from "fs/promises";
 import Papa from "papaparse";
 import { get } from "http";
 const { unparse } = Papa;
+import { createObjectCsvWriter } from "csv-writer";
 
 // Per compatibilità con ESM (equivalente di __dirname)
 const __filename = fileURLToPath(import.meta.url);
@@ -31,6 +32,50 @@ export async function getPlayers(_, res) {
     res.status(200).json(rowsNoEmpty);
   } catch (err) {
     res.status(500).json({ error: "Errore nel leggere il file CSV" });
+  }
+}
+
+//funzione che aggiunge un file al csv
+
+export async function addPlayerToCsv() {
+  const filePath = path.resolve(__dirname, "../data/database.csv");
+
+  // Dati inventati da inserire
+  const nuovoGiocatore = {
+    player: "Mario Rossi",
+    squad: "Team Fantasia",
+    pos: "ATT",
+    partite: "25",
+    minuti: "1800",
+    goal: "12",
+    assist: "7",
+    rigori: "3",
+    gialli: "2",
+    rossi: "0",
+  };
+  // Crea un writer per il CSV e lo appende alla fine del file esistente
+  const csvWriter = createObjectCsvWriter({
+    path: filePath,
+    header: [
+      { id: "player", title: "player" },
+      { id: "squad", title: "squad" },
+      { id: "pos", title: "pos" },
+      { id: "partite", title: "partite" },
+      { id: "minuti", title: "minuti" },
+      { id: "goal", title: "goal" },
+      { id: "assist", title: "assist" },
+      { id: "rigori", title: "rigori" },
+      { id: "gialli", title: "gialli" },
+      { id: "rossi", title: "rossi" },
+    ],
+    append: true, // 👈 Aggiunge alla fine del CSV, non sovrascrive
+  });
+
+  try {
+    await csvWriter.writeRecords([nuovoGiocatore]);
+    console.log("Nuovo giocatore aggiunto al CSV.");
+  } catch (err) {
+    console.error("Errore durante la scrittura nel CSV:", err);
   }
 }
 
