@@ -12,6 +12,9 @@ import Papa from "papaparse";
 import { get } from "http";
 const { unparse } = Papa;
 import { createObjectCsvWriter } from "csv-writer";
+import fs from "fs";
+import { parse } from "csv-parse";
+import { stringify } from "csv-stringify";
 
 // Per compatibilità con ESM (equivalente di __dirname)
 const __filename = fileURLToPath(import.meta.url);
@@ -70,6 +73,55 @@ export async function addPlayerToCsv(req, res) {
     res.status(500).json({ error: "Errore durante l'aggiunta del giocatore" });
     console.error("Errore durante la scrittura nel CSV:", err);
   }
+}
+
+// Eliminazione da CSV confrontando player e squad
+export async function deletePlayerFromCsv(req, res) {
+  const filePath = path.resolve(__dirname, "../data/database.csv");
+  const { player, squad } = req.body;
+
+  if (!player || !squad) {
+    return res.status(400).json({ error: "player e squad sono obbligatori" });
+  }
+
+  const rows = [];
+
+  // 1. Legge tutte le righe del CSV
+  fs.createReadStream(filePath)
+    .pipe(parse({ columns: true }))
+    .on("data", (row) => {
+      // Mantiene solo i giocatori diversi da quello da eliminare
+      if (row.player !== player && row.squad !== squad) {
+        rows.push(row);
+      }
+    })
+    .on("end", () => {
+      // 2. Scrive il nuovo array filtrato nel CSV
+      stringify(rows, { header: true }, (err, output) => {
+        if (err) {
+          console.error("Errore nello stringify:", err);
+          return res
+            .status(500)
+            .json({ error: "Errore durante la scrittura del CSV" });
+        }
+
+        fs.writeFile(filePath, output, (err) => {
+          if (err) {
+            console.error("Errore nella scrittura del file:", err);
+            return res
+              .status(500)
+              .json({ error: "Errore nella riscrittura del CSV" });
+          }
+
+          res.status(200).json({ message: "Giocatore eliminato con successo" });
+          console.log(`Giocatore ${player} (${squad}) eliminato dal CSV.`);
+        });
+      });
+    })
+    .on("error", (err) => {
+      console.error("Errore nella lettura del CSV:", err);
+      res.status(500).json({ error: "Errore nella lettura del CSV" });
+    });
 }
 
 //Funzione che unisce valori all'interno di un oggetto CSV

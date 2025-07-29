@@ -87,7 +87,18 @@ const PlayerDashboard = () => {
     );
 
   const handleDelete = async () => {
-    console.log("Eliminazione giocatore con ID:");
+    try {
+      const res = await fetch("http://127.0.0.1:5000/addUser", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ player: form.player, squad: form.squad }),
+      });
+
+      if (!res.ok) throw new Error("Errore durante l'eliminazione");
+      alert("Giocatore eliminato con successo!");
+    } catch (err) {
+      alert("Errore: " + err.message);
+    }
   };
 
   /** Render principale */
