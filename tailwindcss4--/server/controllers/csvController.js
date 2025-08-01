@@ -9,15 +9,12 @@ import { readCsv } from "../utils/csvReader.js";
 import { writeFile } from "fs/promises";
 //Serve per trasformare l'oggetto in un CSV
 import Papa from "papaparse";
-import { get } from "http";
+
 const { unparse } = Papa;
-import { createObjectCsvWriter } from "csv-writer";
+
 import { stringify } from "csv-stringify/sync";
 
 import fs from "fs";
-import { parse } from "csv-parse";
-
-import { csvModify } from "../utils/csvModify.js";
 
 // Per compatibilità con ESM (equivalente di __dirname)
 const __filename = fileURLToPath(import.meta.url);
@@ -31,11 +28,9 @@ export async function getPlayers(_, res) {
     const file = path.resolve(__dirname, "../data/database.csv");
     const rows = await readCsv(file);
 
-    const rowsNoEmpty = rows.filter(
-      (row) => row.Name !== "Player" && row.Name !== "player"
-    );
+    console.log("csv letto");
 
-    res.status(200).json(rowsNoEmpty);
+    res.status(200).json(rows);
   } catch (err) {
     res.status(500).json({ error: "Errore nel leggere il file CSV" });
   }

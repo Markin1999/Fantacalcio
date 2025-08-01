@@ -19,7 +19,7 @@ def normalize_name(name):
 
 # Passo 1: Leggi database.csv (UTF-8) e crea una mappa "cognome -> elenco di righe"
 surname_map = {}
-with open('database.csv', 'r', encoding='utf-8') as db_file:
+with open('voti_2024_25.csv', 'r', encoding='utf-8') as db_file:
     reader = csv.DictReader(db_file)
     for row in reader:
         # Rimuovi la colonna 'id' se presente
@@ -33,7 +33,7 @@ with open('database.csv', 'r', encoding='utf-8') as db_file:
         first_name = parts[0]
         last_name = parts[-1]
         # Assicura che i campi statistici siano presenti, usa '0' se mancanti o vuoti
-        stats_fields = ['partite', 'minuti', 'goal', 'assist', 'rigori', 'gialli', 'rossi']
+        stats_fields = ['pv', 'mv', 'fm', 'au']
         for field in stats_fields:
             if field not in row or row[field] is None or row[field].strip() == '':
                 row[field] = '0'
@@ -47,7 +47,7 @@ with open('database.csv', 'r', encoding='utf-8') as db_file:
 
 # Passo 2: Leggi Quotazioni_2025_26.csv (delimitato da ';') e arricchisci i dati con le statistiche
 output_rows = []
-with open('Quotazioni_2025_26.csv', 'r', encoding='utf-8') as quot_file:
+with open('unione-Completata.csv', 'r', encoding='utf-8') as quot_file:
     reader = csv.DictReader(quot_file, delimiter=';')
     # Determina le colonne originali (escludendo 'Id')
     original_fields = [fn for fn in reader.fieldnames if fn and fn != 'Id'] if reader.fieldnames else []
@@ -55,7 +55,7 @@ with open('Quotazioni_2025_26.csv', 'r', encoding='utf-8') as quot_file:
         # Rimuovi la colonna 'Id' se presente
         row.pop('Id', None)
         # Inizializza i campi statistici aggiuntivi a '0'
-        stats_fields = ['partite', 'minuti', 'goal', 'assist', 'rigori', 'gialli', 'rossi']
+               stats_fields = ['pv', 'mv', 'fm', 'au']
         for field in stats_fields:
             row[field] = '0'
         # Verifica il campo Nome
@@ -105,7 +105,9 @@ timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 output_filename = f"quotazioni_enriched_{timestamp}.csv"
 output_path = os.path.join('data', output_filename)
 # Prepara l'ordine delle colonne per il file di output
-stats_fields = ['partite', 'minuti', 'goal', 'assist', 'rigori', 'gialli', 'rossi']
+stats_fields = [
+    "pv","mv","fm","au"
+]
 # Se abbiamo le colonne originali dal file Quotazioni, usale nell'ordine originale
 if original_fields:
     fieldnames = ['id'] + original_fields + stats_fields

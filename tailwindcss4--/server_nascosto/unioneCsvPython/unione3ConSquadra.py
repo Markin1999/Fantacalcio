@@ -38,14 +38,9 @@ def is_zero(val: Optional[str]) -> bool:
 # =============================================================
 
 stats_fields: List[str] = [
-    "partite",
-    "minuti",
-    "goal",
-    "assist",
-    "rigori",
-    "gialli",
-    "rossi",
+    "Pv","Mv","Fm","Au"
 ]
+
 
 # =============================================================
 # Lettura file STATISTICHE → mappe
@@ -89,7 +84,7 @@ def load_stats_file(path: str):
             add_record({"first": first, "last": last, "team": team_norm, "stats": stats})
 
 # carica il csv delle statistiche
-load_stats_file("stats-serieB-2024-2025.csv")
+load_stats_file("voti_2024_25.csv")
 
 # =============================================================
 # Funzioni di matching
@@ -133,7 +128,7 @@ def find_record(team_norm: str, name_raw: str) -> Optional[dict]:
 
 output_rows: List[Dict] = []
 
-with open("database.csv", newline="", encoding="utf-8") as f_in:
+with open("unione-Completata.csv", newline="", encoding="utf-8") as f_in:
     reader = csv.DictReader(f_in, delimiter=";")
     original_fields = [c for c in reader.fieldnames if c and c.lower() != "id"] if reader.fieldnames else []
 

@@ -2,7 +2,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-import { readCsv } from "../utils/csvReader.js";
+import { readCsv } from "./csvReader.js";
 import Papa from "papaparse";
 
 const { unparse } = Papa;
